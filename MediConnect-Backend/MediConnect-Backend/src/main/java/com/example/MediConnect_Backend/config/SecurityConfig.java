@@ -68,9 +68,10 @@ public class SecurityConfig {
                                 "/api/patient-consultations/**",
                                 "/api/doctor-panel/**"
                         ).hasRole("DOCTOR")
-                        .requestMatchers("/api/consultations/appointment/**")
-                        .authenticated()
-
+                        .requestMatchers("/api/consultations/appointment/**").authenticated()
+                        .requestMatchers("/api/notifications").authenticated()
+                        .requestMatchers("/api/notifications/**").authenticated()
+                        .requestMatchers("/api/notifications/unread-count").authenticated()
                         .anyRequest().authenticated()).sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

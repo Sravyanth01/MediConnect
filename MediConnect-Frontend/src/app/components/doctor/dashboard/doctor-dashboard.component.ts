@@ -28,7 +28,6 @@ export class DoctorDashboardComponent {
 
   constructor(private authService: AuthService, private router: Router) {
     const user = this.authService.getCurrentUser();
-    console.log('Logged in user:', user);
     this.doctorName = user ? user.name : 'Doctor';
   }
 

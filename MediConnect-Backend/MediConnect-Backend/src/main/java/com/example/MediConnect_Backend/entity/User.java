@@ -45,9 +45,11 @@ public class User implements UserDetails {
     @UpdateTimestamp
     private Instant updatedAt;
 
+    @ToString.Exclude
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Patient patient;
 
+    @ToString.Exclude
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Doctor doctor;
 

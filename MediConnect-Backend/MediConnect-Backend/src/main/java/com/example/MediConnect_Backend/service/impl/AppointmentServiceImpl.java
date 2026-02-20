@@ -122,7 +122,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         Appointment updatedAppointment = appointmentRepository.save(appointment);
 
         String statusText = newStatus == Appointment.Status.Booked ? "confirmed" : "cancelled";
-        String notificationMessage = "Dr. " + doctor.getName() + " has " + statusText + " your appointment for " + updatedAppointment.getDate();
+        String notificationMessage = doctor.getName() + " has " + statusText + " your appointment for " + updatedAppointment.getDate();
         notificationService.createNotification(appointment.getPatient().getUser(), notificationMessage);
 
         return AppointmentResponseDTO.fromEntity(updatedAppointment);

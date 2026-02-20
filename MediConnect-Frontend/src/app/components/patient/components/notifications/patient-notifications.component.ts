@@ -2,7 +2,6 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NotificationService } from '../../../../services/notification.service';
 import { AuthService } from '../../../../services/auth.service';
-import { Notification } from '../../../../models/types';
 
 @Component({
     selector: 'app-patient-notifications',
@@ -12,7 +11,7 @@ import { Notification } from '../../../../models/types';
     styleUrls: ['./patient-notifications.component.css']
 })
 export class PatientNotificationsComponent implements OnInit, OnDestroy {
-    notifications: Notification[] = [];
+    notifications: any[] = [];
     loading = true;
     private intervalId: any;
 
@@ -23,6 +22,7 @@ export class PatientNotificationsComponent implements OnInit, OnDestroy {
 
     ngOnInit() {
         this.fetchNotifications();
+        // Poll every 20 seconds for new unread notifications
         this.intervalId = setInterval(() => this.fetchNotifications(), 20000);
     }
 
@@ -33,19 +33,19 @@ export class PatientNotificationsComponent implements OnInit, OnDestroy {
     }
 
     fetchNotifications() {
-        const user = this.authService.getCurrentUser();
-        if (!user) return;
+   
 
-        
         this.loading = this.notifications.length === 0; 
+        
         this.notificationService.getUnreadNotifications().subscribe({
             next: (data) => {
-                // Filter by current user ID
-                this.notifications = data.filter(n => n.userId === user.id);
+                // The backend already filters by the authenticated user principal
+                this.notifications = data.data;
+                console.log('Fetched notifications:', data);
                 this.loading = false;
             },
             error: (err) => {
-                console.error(err);
+                console.error('Failed to fetch notifications:', err);
                 this.loading = false;
             }
         });
@@ -56,17 +56,18 @@ export class PatientNotificationsComponent implements OnInit, OnDestroy {
             next: () => {
                 this.notifications = this.notifications.filter(n => n.id !== id);
             },
-            error: (err) => console.error(err)
+            error: (err) => console.error('Error marking as read:', err)
         });
     }
 
     handleMarkAllAsRead() {
         if (this.notifications.length === 0) return;
+
         this.notificationService.markAllNotificationsAsRead().subscribe({
             next: () => {
                 this.notifications = [];
             },
-            error: (err) => console.error(err)
+            error: (err) => console.error('Error marking all as read:', err)
         });
     }
 }

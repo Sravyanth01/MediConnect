@@ -1,4 +1,4 @@
-<div class="notification-bell-container" (clickOutside)="closeDropdown()">
+<div class="notification-bell-container">
   <button class="bell-icon-button" [class.active]="isOpen" (click)="toggleDropdown($event)">
     <i class="fas fa-bell"></i>
     <span *ngIf="notifications.length > 0" class="notification-badge">{{ notifications.length }}</span>

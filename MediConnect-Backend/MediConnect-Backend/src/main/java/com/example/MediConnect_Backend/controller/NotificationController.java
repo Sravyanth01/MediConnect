@@ -6,14 +6,17 @@ import com.example.MediConnect_Backend.entity.User;
 import com.example.MediConnect_Backend.repository.UserRepository;
 import com.example.MediConnect_Backend.service.NotificationService;
 import com.example.MediConnect_Backend.util.ApiResponse;
+import com.example.MediConnect_Backend.util.CustomUserPrinciple;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/notifications")
@@ -26,21 +29,20 @@ public class NotificationController {
 
     @GetMapping
     public ResponseEntity<?> getMyNotifications(
-            @AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails) {
+            @AuthenticationPrincipal CustomUserPrinciple principal) {
         try {
-            if (userDetails == null) {
-                log.error("UserDetails is null - authentication failed");
-                return ResponseEntity.status(401).body(ApiResponse.error("Authentication failed"));
+            if (principal == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("success", false, "message", "Authentication failed"));
             }
 
-            String username = userDetails.getUsername();
-            log.info("Getting notifications for user: {}", username);
+            Long userId = principal.getUserId();
 
-            User currentUser = userRepository.findByEmail(username)
-                    .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + username));
+            User currentUser = userRepository.findById(userId)
+                    .orElseThrow(() -> new IllegalArgumentException("Patient not found with ID: " + userId));
 
             List<NotificationResponse> notifications = notificationService.getUnreadNotificationsForUser(currentUser);
-            log.info("Found {} notifications for user: {}", notifications.size(), username);
+            log.info("Found {} notifications for user: {}", notifications.size(), currentUser);
 
             return ResponseEntity.ok(ApiResponse.success(notifications));
         } catch (IllegalArgumentException e) {
@@ -55,18 +57,17 @@ public class NotificationController {
     @PatchMapping("/{id}/read")
     public ResponseEntity<?> markAsRead(
             @PathVariable Long id,
-            @AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails) {
+            @AuthenticationPrincipal CustomUserPrinciple principal) {
         try {
-            if (userDetails == null) {
-                log.error("UserDetails is null - authentication failed");
-                return ResponseEntity.status(401).body(ApiResponse.error("Authentication failed"));
+            if (principal == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("success", false, "message", "Authentication failed"));
             }
 
-            String username = userDetails.getUsername();
-            log.info("Marking notification as read: ID {}, User: {}", id, username);
+            Long userId = principal.getUserId();
 
-            User currentUser = userRepository.findByEmail(username)
-                    .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + username));
+            User currentUser = userRepository.findById(userId)
+                    .orElseThrow(() -> new IllegalArgumentException("Patient not found with ID: " + userId));
 
             NotificationResponse notification = notificationService.markAsRead(id, currentUser);
             return ResponseEntity.ok(ApiResponse.success(notification));
@@ -81,21 +82,20 @@ public class NotificationController {
 
     @PatchMapping("/read-all")
     public ResponseEntity<?> markAllAsRead(
-            @AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails) {
+            @AuthenticationPrincipal CustomUserPrinciple principal) {
         try {
-            if (userDetails == null) {
-                log.error("UserDetails is null - authentication failed");
-                return ResponseEntity.status(401).body(ApiResponse.error("Authentication failed"));
+            if (principal == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("success", false, "message", "Authentication failed"));
             }
 
-            String username = userDetails.getUsername();
-            log.info("Marking all notifications as read for user: {}", username);
+            Long userId = principal.getUserId();
 
-            User currentUser = userRepository.findByEmail(username)
-                    .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + username));
+            User currentUser = userRepository.findById(userId)
+                    .orElseThrow(() -> new IllegalArgumentException("Patient not found with ID: " + userId));
 
             List<NotificationResponse> notifications = notificationService.markAllAsRead(currentUser);
-            log.info("Marked {} notifications as read for user: {}", notifications.size(), username);
+            log.info("Marked {} notifications as read for user: {}", notifications.size(), currentUser);
 
             return ResponseEntity.ok(ApiResponse.success(notifications));
         } catch (IllegalArgumentException e) {
@@ -108,22 +108,13 @@ public class NotificationController {
     }
 
     @GetMapping("/unread-count")
-    public ResponseEntity<ApiResponse<NotificationCountResponse>> getUnreadNotificationCount(
-            @AuthenticationPrincipal UserDetails userDetails) { // <-- FIX 1: Use UserDetails
+    public ResponseEntity<ApiResponse<NotificationCountResponse>> getUnreadNotificationCount(@AuthenticationPrincipal CustomUserPrinciple principal) {
 
         try {
-            if (userDetails == null) {
-                log.error("UserDetails is null - authentication failed");
-                return ResponseEntity.status(401).body(ApiResponse.error("Authentication failed"));
-            }
+            Long userId = principal.getUserId();
 
-            String username = userDetails.getUsername();
-            log.info("getUnreadNotificationCount called for user email: {}", username);
-
-            User currentUser = userRepository.findByEmail(username)
-                    .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + username));
-
-            log.info("Successfully fetched user ID: {}", currentUser.getId());
+            User currentUser = userRepository.findById(userId)
+                    .orElseThrow(() -> new IllegalArgumentException("Patient not found with ID: " + userId));
 
             NotificationCountResponse countResponse = notificationService.countUnreadNotifications(currentUser);
             log.info("Service returned unread count: {}", countResponse.getUnreadCount());

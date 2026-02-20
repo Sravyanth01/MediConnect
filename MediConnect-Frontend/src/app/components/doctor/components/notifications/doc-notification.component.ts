@@ -2,7 +2,6 @@ import { Component, OnInit, OnDestroy, HostListener, ElementRef } from '@angular
 import { CommonModule } from '@angular/common';
 import { NotificationService } from '../../../../services/notification.service';
 import { AuthService } from '../../../../services/auth.service';
-import { Notification } from '../../../../models/types';
 
 @Component({
     selector: 'app-doc-notification',
@@ -12,7 +11,7 @@ import { Notification } from '../../../../models/types';
     styleUrls: ['./doc-notification.component.css']
 })
 export class DocNotificationComponent implements OnInit, OnDestroy {
-    notifications: Notification[] = [];
+    notifications: any[] = [];
     isLoading = true;
     isOpen = false;
     private intervalId: any;
@@ -25,6 +24,7 @@ export class DocNotificationComponent implements OnInit, OnDestroy {
 
     ngOnInit() {
         this.fetchNotifications();
+        // Poll every 20 seconds
         this.intervalId = setInterval(() => this.fetchNotifications(), 20000);
     }
 
@@ -34,6 +34,7 @@ export class DocNotificationComponent implements OnInit, OnDestroy {
         }
     }
 
+    // Handles clicking outside the notification dropdown to close it
     @HostListener('document:click', ['$event'])
     clickOutside(event: MouseEvent) {
         if (!this.elementRef.nativeElement.contains(event.target)) {
@@ -46,22 +47,17 @@ export class DocNotificationComponent implements OnInit, OnDestroy {
         this.isOpen = !this.isOpen;
     }
 
-    closeDropdown() {
-        this.isOpen = false;
-    }
-
     fetchNotifications() {
-        const user = this.authService.getCurrentUser();
-        if (!user) {
-            this.notifications = [];
-            return;
-        }
+
 
         if (this.notifications.length === 0) this.isLoading = true;
 
         this.notificationService.getUnreadNotifications().subscribe({
             next: (data) => {
-                this.notifications = data;
+
+                const items = (data && (data.data ?? data)) || [];
+                this.notifications = Array.isArray(items) ? items : [];
+                console.log('Fetched doctor notifications:', data);
                 this.isLoading = false;
             },
             error: (err) => {
@@ -91,4 +87,8 @@ export class DocNotificationComponent implements OnInit, OnDestroy {
             error: (err) => console.error("Failed to mark all as read", err)
         });
     }
+
+    closeDropdown() {
+    this.isOpen = false;
+}
 }
